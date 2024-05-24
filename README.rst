@@ -24,9 +24,6 @@ Installation
 
     python3 setup.py install
 
-A projects allowing scalable hierarchical clustering, thanks to an
-approximated version of HDBSCAN, on arbitrary data and distance measures.
-
 Quickstart
 ----------
 
