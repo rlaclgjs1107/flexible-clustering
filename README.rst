@@ -52,33 +52,32 @@ avoid confusing Python path.
 Return Values
 -------------
 
-From the `HDBSCAN source code <https://hdbscan.readthedocs.io/en/latest/_modules/hdbscan/hdbscan_.html>`_:
+As documented in the `HDBSCAN source code <https://hdbscan.readthedocs.io/en/latest/_modules/hdbscan/hdbscan_.html>`_:
 
 labels : ndarray, shape (n_samples, )
         Cluster labels for each point.  Noisy samples are given the label -1.
 
-    probabilities : ndarray, shape (n_samples, )
+probabilities : ndarray, shape (n_samples, )
         Cluster membership strengths for each point. Noisy samples are assigned
         0.
 
-    cluster_persistence : array, shape  (n_clusters, )
+cluster_persistence : array, shape  (n_clusters, )
         A score of how persistent each cluster is. A score of 1.0 represents
         a perfectly stable cluster that persists over all distance scales,
         while a score of 0.0 represents a perfectly ephemeral cluster. These
         scores can be guage the relative coherence of the clusters output
         by the algorithm.
 
-    condensed_tree : record array
+condensed_tree : record array
         The condensed cluster hierarchy used to generate clusters.
 
-    single_linkage_tree : ndarray, shape (n_samples - 1, 4)
+single_linkage_tree : ndarray, shape (n_samples - 1, 4)
         The single linkage tree produced during clustering in scipy
         hierarchical clustering format
         (see http://docs.scipy.org/doc/scipy/reference/cluster.hierarchy.html).
 
-    min_spanning_tree : ndarray, shape (n_samples - 1, 3)
-        The minimum spanning as an edgelist. If gen_min_span_tree was False
-        this will be None.
+min_spanning_tree : ndarray, shape (n_samples - 1, 3)
+        The minimum spanning as an edgelist.
 
 Demo/Example
 ------------
