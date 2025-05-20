@@ -1,0 +1,17 @@
+# pycache
+__pycache__/
+
+# Cython build artifacts
+*.c
+*.cpp
+
+# Windows DLL/Python extension
+*.pyd
+
+# macOS/Linux Python extension
+*.so
+
+# build dirs
+build/
+dist/
+*.egg-info/
