@@ -1,12 +1,13 @@
-from setuptools import setup, find_packages, Extension
-from Cython.Build import cythonize
 from codecs import open
 from os import path
+
 import numpy
+from Cython.Build import cythonize
+from setuptools import Extension, find_packages, setup
 
 here = path.abspath(path.dirname(__file__))
 
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
 extensions = [
@@ -18,25 +19,22 @@ extensions = [
 ]
 
 setup(
-    name='flexible_clustering',
-    version='0.1.0',
-    description='Flexible Clustering',
+    name="flexible_clustering",
+    version="0.1.0",
+    description="Flexible Clustering",
     long_description=long_description,
     author="Matteo Dell'Amico",
-    author_email='matteo_dellamico@symantec.com',
-    license='BSD 3-clause',
+    author_email="matteo_dellamico@symantec.com",
+    license="BSD 3-clause",
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
     ],
-    keywords='clustering non-metric',
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=[
-        "hdbscan (>=0.8.40,<0.9.0)",
-        "numpy (>=2.2.6,<3.0.0)"
-    ],
+    keywords="clustering non-metric",
+    packages=find_packages(exclude=["contrib", "docs", "tests"]),
+    install_requires=["hdbscan (>=0.8.40,<0.9.0)", "numpy (>=1.24.4,<3.0.0)"],
     ext_modules=cythonize(extensions),
 )
