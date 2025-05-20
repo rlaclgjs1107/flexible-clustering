@@ -34,6 +34,9 @@ setup(
     ],
     keywords='clustering non-metric',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=[],
+    install_requires=[
+        "hdbscan (>=0.8.40,<0.9.0)",
+        "numpy (>=2.2.6,<3.0.0)"
+    ],
     ext_modules=cythonize(extensions),
 )
