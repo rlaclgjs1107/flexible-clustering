@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018 Symantec Corporation. All Rights Reserved. 
+# Copyright (c) 2017-2018 Symantec Corporation. All Rights Reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -33,45 +33,64 @@ import heapq
 import hdbscan
 import numpy as np
 import scipy.sparse
-
 from hdbscan import hdbscan_
 
 from . import hnsw
 from .unionfind import UnionFind
 
-def hnsw_hdbscan(data, d, m=5, ef=50, m0=None, level_mult=None,
-                 heuristic=True, balanced_add=True, **kwargs):
+
+def hnsw_hdbscan(
+    data,
+    d,
+    m=5,
+    ef=50,
+    m0=None,
+    level_mult=None,
+    heuristic=True,
+    balanced_add=True,
+    **kwargs,
+):
     """Simple implementation for when you don't need incremental updates."""
 
     n = len(data)
     distance_matrix = scipy.sparse.lil_matrix((n, n))
-    
+
     def decorated_d(i, j):
         res = d(data[i], data[j])
         distance_matrix[i, j] = distance_matrix[j, i] = res
         return res
-    
+
     the_hnsw = hnsw.HNSW(decorated_d, m, ef, m0, level_mult, heuristic)
     add = the_hnsw.balanced_add if balanced_add else the_hnsw.add
     for i in range(len(data)):
         add(i)
 
-    return hdbscan.hdbscan(distance_matrix, metric='precomputed', **kwargs)
+    return hdbscan.hdbscan(distance_matrix, metric="precomputed", **kwargs)
 
 
 class FISHDBC:
     """Flexible Incremental Scalable Hierarchical Density-Based Clustering."""
 
-    def __init__(self, d, min_samples=5, m=5, ef=50, m0=None, level_mult=None,
-                 heuristic=True, balanced_add=True, vectorized=False):
+    def __init__(
+        self,
+        d,
+        min_samples=5,
+        m=5,
+        ef=50,
+        m0=None,
+        level_mult=None,
+        heuristic=True,
+        balanced_add=True,
+        vectorized=False,
+    ):
         """Setup the algorithm. The only mandatory parameter is d, the
         dissimilarity function. min_samples is passed to hdbscan, and
         the other parameters are all passed to HNSW."""
 
         self.min_samples = min_samples
-        
+
         self.data = data = []  # the data we're clustering
-        
+
         self._mst_edges = []  # minimum spanning tree.
         # format: a list of (rd, i, j, dist) edges where nodes are
         # data[i] and data[j], dist is the dissimilarity between them, and rd
@@ -80,7 +99,7 @@ class FISHDBC:
         # (i, j) -> dist: the new candidates for the spanning tree
         # reachability distance will be computed afterwards
         self._new_edges = {}
-        
+
         # for each data[i], _neighbor_heaps[i] contains a heap of
         # (mdist, j) where the data[j] are the min_sample closest distances
         # to i and mdist = -d(data[i], data[j]). Since heapq doesn't
@@ -91,10 +110,10 @@ class FISHDBC:
         # caches the distances computed to the last data item inserted
         self._distance_cache = distance_cache = {}
 
-
         self.cache_hits = self.cache_misses = 0
         # decorated_d will cache the computed distances in distance_cache.
         if not vectorized:  # d is defined to work on scalars
+
             def decorated_d(i, j):
                 # assert i == len(data) - 1 # 1st argument is the new item
                 if j in distance_cache:
@@ -103,7 +122,9 @@ class FISHDBC:
                 self.cache_misses += 1
                 distance_cache[j] = dist = d(data[i], data[j])
                 return dist
-        else: # d is defined to work on a scalar and a list
+
+        else:  # d is defined to work on a scalar and a list
+
             def decorated_d(i, js):
                 # assert i == len(data) - 1 # 1st argument is the new item
                 res = [None] * len(js)
@@ -115,8 +136,9 @@ class FISHDBC:
                         unknown_j.append(j)
                         unknown_pos.append(pos)
                 if len(unknown_j) > 0:
-                    for pos, j, dist in zip(unknown_pos, unknown_j,
-                                            d(data[i], unknown_j)):
+                    for pos, j, dist in zip(
+                        unknown_pos, unknown_j, d(data[i], unknown_j)
+                    ):
                         distance_cache[j] = res[pos] = dist
                 misses = len(unknown_j)
                 self.cache_misses += misses
@@ -124,17 +146,15 @@ class FISHDBC:
                 return res
 
         # We create the HNSW
-        the_hnsw = hnsw.HNSW(decorated_d, m, ef, m0, level_mult, heuristic,
-                             vectorized)
-        self._hnsw_add = (the_hnsw.balanced_add if balanced_add
-                          else the_hnsw.add)
+        the_hnsw = hnsw.HNSW(decorated_d, m, ef, m0, level_mult, heuristic, vectorized)
+        self._hnsw_add = the_hnsw.balanced_add if balanced_add else the_hnsw.add
 
     def __len__(self):
         return len(self.data)
-    
+
     def add(self, elem):
         """Add elem to the data structure."""
-        
+
         data = self.data
         distance_cache = self._distance_cache
         min_samples = self.min_samples
@@ -144,7 +164,7 @@ class FISHDBC:
         minus_infty = -np.infty
 
         assert distance_cache == {}
-        
+
         idx = len(data)
         data.append(elem)
         # let's start with min_samples values of infinity rather than
@@ -152,7 +172,7 @@ class FISHDBC:
         nh.append([(minus_infty, minus_infty)] * min_samples)
 
         self._hnsw_add(idx)
-        
+
         for j, dist in distance_cache.items():
             mdist = -dist
             heapq.heappushpop(nh[idx], (mdist, j))
@@ -174,6 +194,15 @@ class FISHDBC:
                         new_edges[key] = -min(md, new_mrd)
         distance_cache.clear()
 
+    def insert(self, elems):
+        """Add elements from elems and update the MST.
+
+        The MST is updated after all elements are added.
+        """
+        for elem in elems:
+            self.add(elem)
+        self.update_mst()
+
     def update(self, elems, mst_update_rate=100000):
         """Add elements from elems and update the MST.
 
@@ -189,20 +218,21 @@ class FISHDBC:
 
     def update_mst(self):
         """Update the minimum spanning tree."""
-        
+
         new_edges = self._new_edges
 
         if len(new_edges) == 0:
             return
-        
+
         candidate_edges = self._mst_edges
         nh = self._neighbor_heaps
 
-        candidate_edges.extend((max(dist, -nh[i][0][0], -nh[j][0][0]),
-                                i, j, dist)
-                               for (i, j), dist in new_edges.items())
+        candidate_edges.extend(
+            (max(dist, -nh[i][0][0], -nh[j][0][0]), i, j, dist)
+            for (i, j), dist in new_edges.items()
+        )
         heapq.heapify(candidate_edges)
-        
+
         # Kruskal's algorithm
         self._mst_edges = mst_edges = []
         n = len(self.data)
@@ -215,12 +245,16 @@ class FISHDBC:
                 needed_edges -= 1
 
         new_edges.clear()
-    
-    def cluster(self, min_cluster_size=None, cluster_selection_method='eom',
-                allow_single_cluster=False,
-                match_reference_implementation=False):
+
+    def cluster(
+        self,
+        min_cluster_size=None,
+        cluster_selection_method="eom",
+        allow_single_cluster=False,
+        match_reference_implementation=False,
+    ):
         """Returns: (labels, probs, stabilities, condensed_tree, slt, mst)."""
-        
+
         if min_cluster_size is None:
             min_cluster_size = self.min_samples
         self.update_mst()
@@ -229,9 +263,11 @@ class FISHDBC:
         slt = hdbscan_.label(mst)
         condensed_tree = hdbscan_.condense_tree(slt, min_cluster_size)
         stability_dict = hdbscan_.compute_stability(condensed_tree)
-        lps = hdbscan_.get_clusters(condensed_tree,
-                                    stability_dict,
-                                    cluster_selection_method,
-                                    allow_single_cluster,
-                                    match_reference_implementation)
+        lps = hdbscan_.get_clusters(
+            condensed_tree,
+            stability_dict,
+            cluster_selection_method,
+            allow_single_cluster,
+            match_reference_implementation,
+        )
         return lps + (condensed_tree, slt, mst)
